@@ -8,3 +8,10 @@ dist/
 !.env.example
 *.log
 .DS_Store
+.astro/
+.cloudhal/
+# Studio, copied from @cloudhal/cli by scripts/copy-studio.mjs
+public/index.html
+public/assets/
+public/_headers
+public/.assetsignore

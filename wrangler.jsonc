@@ -1,44 +1,47 @@
 // try.cloudhal.com: one Worker; each visitor gets a SQLite-backed Durable Object (RFC-0036 §1).
+// `pnpm build` (astro build) bundles src/playground/worker.ts with the site; `wrangler deploy`
+// then uses the generated dist/server/wrangler.json.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "cloudhal-playground",
-  "main": "./src/worker.ts",
-  "compatibility_date": "2026-10-01",
+  "main": "./src/playground/worker.ts",
+  "compatibility_date": "2026-07-01",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
   "preview_urls": false,
-  "observability": { "enabled": true },
+  "observability": { "enabled": true, "redact_query_string": true },
 
-  // One SQLite-backed DO per session, addressed by idFromName(<session ULID>) (RFC-0036 §2, §6).
-  "durable_objects": {
-    "bindings": [{ "name": "PLAYGROUND_DB", "class_name": "PlaygroundSite" }]
-  },
+  // One SQLite-backed DO per session (idFromName(<session ULID>)), and the daily counter.
+  "durable_objects": { "bindings": [{ "name": "PLAYGROUND", "class_name": "PlaygroundSite" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PlaygroundSite"] }],
 
   // Workers Rate Limiting (RFC-0036 §7). namespace_id is an account-unique integer string.
   "ratelimits": [
     // New sessions: 5 / min per IP (key = CF-Connecting-IP).
-    {
-      "name": "SESSION_RATE_LIMIT",
-      "namespace_id": "4101",
-      "simple": { "limit": 5, "period": 60 }
-    },
-    // Writes: 120 / min per session (key = session ULID).
-    { "name": "WRITE_RATE_LIMIT", "namespace_id": "4102", "simple": { "limit": 120, "period": 60 } }
+    { "name": "SESSION_LIMIT", "namespace_id": "4101", "simple": { "limit": 5, "period": 60 } },
+    // Writes: 120 / min per session.
+    { "name": "WRITE_LIMIT", "namespace_id": "4102", "simple": { "limit": 120, "period": 60 } }
   ],
 
-  // Landing page assets and read-only demo media (public/demo/, the base of the LayeredBlobStore).
-  // The Worker runs first so the kill switch and the guard see every request.
-  "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": true },
+  // Landing page, Studio (copied from @cloudhal/cli by `pnpm build`), the site's assets and the
+  // read-only demo media. No SPA fallback: the Worker serves Studio's index.html for its routes,
+  // and the session's blob store must see a 404 for files that do not exist.
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "none"
+  },
 
   "vars": {
-    // Kill switch: anything but "true" serves only the landing page (RFC-0036 §7).
+    // Kill switch: only "true" opens the playground; anything else serves the landing page.
     "PLAYGROUND_ENABLED": "false",
-    // Daily session cap; "" means no cap (RFC-0036 §9).
-    "PLAYGROUND_DAILY_SESSIONS": "",
-    "DEPLOY_URL": "https://cloudhal.dev"
+    // New sessions per UTC day; "" means no cap (RFC-0036 §9).
+    "PLAYGROUND_DAILY_SESSIONS": "2000"
   }
 
+  // Secrets (wrangler secret put): PLAYGROUND_SECRET (≥ 32 chars, signs the session cookie),
+  // TURNSTILE_SECRET. Optional var: TURNSTILE_SITE_KEY.
   // Custom domain, enabled at launch (RFC-0036 phase 4, ADR-0037):
   // "routes": [{ "pattern": "try.cloudhal.com", "custom_domain": true }]
 }

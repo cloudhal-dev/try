@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   check:
-    name: Lint · typecheck
+    name: Lint · typecheck · build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -23,9 +23,9 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-      # @cloudhal/* are `link:` deps on a sibling monorepo checkout that CI does not have. pnpm
-      # installs the dangling links fine, and src/ does not import them yet. TODO(publish): pin npm
-      # versions, then also run `wrangler deploy --dry-run` here.
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
+      # Studio + Astro site + playground Worker in one bundle; nothing is uploaded.
+      - run: pnpm build
+      - run: pnpm exec wrangler deploy --dry-run

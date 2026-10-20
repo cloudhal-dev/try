@@ -10,18 +10,25 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "node scripts/copy-studio.mjs && astro build",
+    "dev": "pnpm build && wrangler dev",
+    "deploy": "pnpm build && wrangler deploy",
+    "demo-media": "node scripts/demo-media.mjs",
+    "typecheck": "astro sync && tsc --noEmit -p tsconfig.json",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "check": "pnpm lint && pnpm typecheck"
   },
-  "//": "TODO(publish): @cloudhal/* are linked from a sibling monorepo checkout (../cloudhal-dev) until they are on npm; then pin exact versions here. src/ does not import them yet.",
   "dependencies": {
-    "@cloudhal/cloudflare": "link:../cloudhal-dev/packages/cloudflare",
-    "@cloudhal/core-ts": "link:../cloudhal-dev/packages/core-ts",
-    "@cloudhal/storage": "link:../cloudhal-dev/packages/storage"
+    "@astrojs/cloudflare": "14.3.4",
+    "@cloudhal/astro-renderer": "0.3.0",
+    "@cloudhal/cli": "0.3.0",
+    "@cloudhal/cloudflare": "0.3.0",
+    "@cloudhal/core-contracts": "0.3.0",
+    "@cloudhal/core-ts": "0.3.0",
+    "@tailwindcss/vite": "4.3.3",
+    "astro": "7.3.6",
+    "tailwindcss": "4.3.3"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

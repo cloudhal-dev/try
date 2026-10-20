@@ -5,3 +5,9 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - "@cloudflare/workers-types@5.20261007.1"
+  # Cloudhal's own releases are used the day they are published.
+  - "@cloudhal/*"
+
+# The version the monorepo builds and tests sites with; 1.64 needs wrangler ≥ 4.151.
+overrides:
+  "@cloudflare/vite-plugin": 1.63.0
