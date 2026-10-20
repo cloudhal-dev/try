@@ -35,7 +35,7 @@
 
   "vars": {
     // Kill switch: only "true" opens the playground; anything else serves the landing page.
-    "PLAYGROUND_ENABLED": "false",
+    "PLAYGROUND_ENABLED": "true",
     // New sessions per UTC day; "" means no cap (RFC-0036 §9).
     "PLAYGROUND_DAILY_SESSIONS": "2000"
   },
