@@ -1,0 +1,32 @@
+{
+  "name": "cloudhal-try",
+  "private": true,
+  "version": "0.0.0",
+  "description": "try.cloudhal.com: a disposable Cloudhal per visitor (RFC-0036)",
+  "license": "Apache-2.0",
+  "type": "module",
+  "packageManager": "pnpm@12.10.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "check": "pnpm lint && pnpm typecheck"
+  },
+  "//": "TODO(publish): @cloudhal/* are linked from a sibling monorepo checkout (../cloudhal-dev) until they are on npm; then pin exact versions here. src/ does not import them yet.",
+  "dependencies": {
+    "@cloudhal/cloudflare": "link:../cloudhal-dev/packages/cloudflare",
+    "@cloudhal/core-ts": "link:../cloudhal-dev/packages/core-ts",
+    "@cloudhal/storage": "link:../cloudhal-dev/packages/storage"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@cloudflare/workers-types": "5.20261007.1",
+    "typescript": "7.0.2",
+    "wrangler": "4.148.0"
+  }
+}
