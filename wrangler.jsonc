@@ -38,10 +38,10 @@
     "PLAYGROUND_ENABLED": "false",
     // New sessions per UTC day; "" means no cap (RFC-0036 §9).
     "PLAYGROUND_DAILY_SESSIONS": "2000"
-  }
+  },
 
   // Secrets (wrangler secret put): PLAYGROUND_SECRET (≥ 32 chars, signs the session cookie),
   // TURNSTILE_SECRET. Optional var: TURNSTILE_SITE_KEY.
-  // Custom domain, enabled at launch (RFC-0036 phase 4, ADR-0037):
-  // "routes": [{ "pattern": "try.cloudhal.com", "custom_domain": true }]
+  // Custom domain (RFC-0036 phase 4, ADR-0037).
+  "routes": [{ "pattern": "try.cloudhal.com", "custom_domain": true }]
 }
