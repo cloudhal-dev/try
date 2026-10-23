@@ -10,6 +10,7 @@ import "@cloudhal/cloudflare/workerd-prelude";
 import { handle } from "@astrojs/cloudflare/handler";
 import { serveMedia, withRequestStore } from "@cloudhal/astro-renderer/runtime";
 import { createPlaygroundWorker, type PlaygroundEnv } from "@cloudhal/cloudflare/playground";
+import { serveDemoMedia } from "./demo-media-route.ts";
 import { DEMO_MEDIA_KEYS, seedDemo } from "./demo-pack.ts";
 import { LANDING_PATH, landingPage } from "./landing.ts";
 
@@ -56,6 +57,11 @@ export default {
         return env.ASSETS.fetch(new Request(new URL("/index.html", url), { headers: req.headers }));
       },
     } as unknown as Fetcher;
+    // Demo images answer without a session: Studio's sandboxed preview sends no cookie.
+    if (enabled) {
+      const media = await serveDemoMedia(request, env.ASSETS);
+      if (media) return media;
+    }
     return playground.worker.fetch(request, {
       ...env,
       ASSETS: assets,
