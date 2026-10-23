@@ -22,11 +22,11 @@
   },
   "dependencies": {
     "@astrojs/cloudflare": "14.3.4",
-    "@cloudhal/astro-renderer": "0.6.0",
-    "@cloudhal/cli": "0.6.0",
-    "@cloudhal/cloudflare": "0.6.0",
-    "@cloudhal/core-contracts": "0.6.0",
-    "@cloudhal/core-ts": "0.6.0",
+    "@cloudhal/astro-renderer": "0.6.1",
+    "@cloudhal/cli": "0.6.1",
+    "@cloudhal/cloudflare": "0.6.1",
+    "@cloudhal/core-contracts": "0.6.1",
+    "@cloudhal/core-ts": "0.6.1",
     "@tailwindcss/vite": "4.3.3",
     "astro": "7.3.6",
     "tailwindcss": "4.3.3"
