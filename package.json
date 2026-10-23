@@ -17,7 +17,8 @@
     "typecheck": "astro sync && tsc --noEmit -p tsconfig.json",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "check": "pnpm lint && pnpm typecheck"
+    "test": "node --test test/*.test.ts",
+    "check": "pnpm lint && pnpm typecheck && pnpm test"
   },
   "dependencies": {
     "@astrojs/cloudflare": "14.3.4",
