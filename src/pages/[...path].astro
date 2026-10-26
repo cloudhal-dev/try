@@ -10,6 +10,7 @@ import {
 import { commentsJsonLd, loadComments } from "@cloudhal/astro-renderer/comments";
 import { Comments, Sections } from "@cloudhal/astro-renderer/components";
 import { EMBED_HEADER, usesEmbeds } from "@cloudhal/astro-renderer/embeds";
+import type { RenderedFields } from "@cloudhal/astro-renderer/fields";
 import { gateNotice } from "@cloudhal/astro-renderer/gates";
 import {
   alternatesFor,
@@ -34,15 +35,18 @@ import {
   navigationCacheTags,
 } from "@cloudhal/astro-renderer/navigation";
 import { notFoundPage, notFoundPageIds } from "@cloudhal/astro-renderer/not-found";
+import { contentListEntries } from "@cloudhal/astro-renderer/queries";
 import { resolveRoute, staticPaths } from "@cloudhal/astro-renderer/routing";
 import { getSource, peerEditions } from "@cloudhal/astro-renderer/runtime";
 import { searchAvailable } from "@cloudhal/astro-renderer/search";
 import {
   archiveHead,
+  collectionFeedLink,
   entryHead,
   pageHead,
   searchHead,
   siteOrigin,
+  withStructuredData,
 } from "@cloudhal/astro-renderer/seo";
 import { loadSurfaceSources, surfaceSources } from "@cloudhal/astro-renderer/surfaces";
 import {
@@ -256,6 +260,7 @@ let entries: Record<string, ContentEntry[]> = {};
 let surfaces: Awaited<ReturnType<typeof loadSurfaceSources>> = {};
 let terms = entryTaxonomy(undefined, { tags: [] });
 let related: ContentEntry[] = [];
+let fields: RenderedFields | undefined;
 if (route.kind === "page") {
   tags.push(nodeCacheTag(route.page.id));
   // Lists of the site's entries change with any entry: the site's list tag covers them.
@@ -267,26 +272,17 @@ if (route.kind === "page") {
     tags.push(listCacheTag(site.id));
   // Generated UI (RFC-0020 §3): entry sources load from the same source as the page.
   surfaces = await loadSurfaceSources(source, route.page.sections);
-  const collections = [
-    ...new Set(
-      route.page.sections.filter((s) => s.kind === "contentList").map((s) => s.collection),
-    ),
-  ];
-  entries = Object.fromEntries(
-    await Promise.all(collections.map(async (c) => [c, await source.entries(c, locale)])),
-  );
-  // A section with a `filter` (RFC-0002 §5) lists its own entries, keyed by section id.
-  for (const s of route.page.sections)
-    if (s.kind === "contentList" && s.filter)
-      entries[s.id] = await source
-        .entriesByFilter(`collection:${s.collection}+${s.filter}`, { locale })
-        .catch((err: unknown) => {
-          console.warn(`cloudhal: section ${s.id} has an invalid filter: ${String(err)}`);
-          return [];
-        });
+  // Each collection's newest entries; a section with a `filter` (RFC-0002 §5) or `where`/`orderBy`
+  // (RFC-0042 §4) lists its own, keyed by section id.
+  entries = await contentListEntries(source, route.page.sections, locale);
 } else if (route.kind === "entry") {
   terms = entryTaxonomy(index, route.entry);
   related = relatedEntries(route.entry, all, index, RELATED_POSTS);
+  // RFC-0041 §9: typed fields in the entry's language; values read from the original tag it too.
+  fields = await source.entryFields?.(route.entry, { media, words: { yes: t.yes, no: t.no } });
+  const group = route.entry.translation?.group;
+  if (group && Object.values(fields ?? {}).some((f) => f.fromOriginal))
+    tags.push(nodeCacheTag(group));
   tags.push(
     nodeCacheTag(route.entry.id),
     // the related posts it links to: a retitled or removed one purges this page too
@@ -332,7 +328,7 @@ const gated = route.kind === "page" ? route.page : route.kind === "entry" ? rout
 const gate = gated ? gateNotice(gated, site, locale, Date.now()) : undefined;
 const notice = gate && { state: gate.state, at: gate.at, text: t[gate.state](gate.when) };
 
-const head =
+const baseHead =
   route.kind === "page"
     ? pageHead(site, route.page, origin, media)
     : route.kind === "entry"
@@ -346,6 +342,11 @@ const head =
               title: `${isMenu ? t.menu : t.notFoundTitle} · ${site.name}`,
               canonical: `${origin}${isMenu ? "/menu" : path}`,
             };
+// RFC-0042 §2: a collection's JSON-LD preset replaces the article's generic BlogPosting.
+const head =
+  route.kind === "entry"
+    ? await withStructuredData(baseHead, source, route.entry, { origin, media })
+    : baseHead;
 // RFC-0033 §4: self-canonical in the locale, `lang`/`dir`, and the `hreflang` set from the group.
 const fallback = shownIn !== locale;
 const alternates =
@@ -359,7 +360,23 @@ const localized = localizeHead(head, site, {
   alternates,
   ...(gated?.translation ? { translation: gated.translation } : {}),
 });
-const meta = fallback || notFound ? { ...localized, robots: "noindex,follow" } : localized;
+// RFC-0042 §5: the feed of the entry's collection, or of each collection a page lists.
+const listed = notFound
+  ? []
+  : route.kind === "entry"
+    ? [route.entry.collection]
+    : route.kind === "page"
+      ? route.page.sections.flatMap((s) => (s.kind === "contentList" ? [s.collection] : []))
+      : [];
+const feeds = [
+  ...localized.feeds,
+  ...[...new Set(listed)].flatMap((c) => collectionFeedLink(site, c, origin, locale) ?? []),
+];
+const meta = {
+  ...localized,
+  feeds,
+  ...(fallback || notFound ? { robots: "noindex,follow" } : {}),
+};
 Astro.response.headers.set("content-language", shownIn);
 // The pairing's fonts as a Link header too (Early Hints), not only as <link rel=preload> in <head>.
 const pairing = themeVariables(site, themeSettings).attributes["data-ch-type-pairing"];
@@ -448,7 +465,7 @@ const searchForm = searchAvailable(config, source)
           { name: route.entry.title },
         ]}
       />
-      <Article entry={route.entry} terms={terms} locale={locale} t={t} media={media} blocks={blocks} blockTypes={blockTypes} />
+      <Article entry={route.entry} terms={terms} locale={locale} t={t} media={media} blocks={blocks} blockTypes={blockTypes} fields={fields} />
       <PostTerms taxonomy={terms} locale={locale} />
       <RelatedPosts title={t.related} entries={related} locale={locale} media={media} />
       <Comments view={comments} />
