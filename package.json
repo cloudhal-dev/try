@@ -21,20 +21,20 @@
     "check": "pnpm lint && pnpm typecheck && pnpm test"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "14.3.4",
-    "@cloudhal/astro-renderer": "0.6.2",
-    "@cloudhal/cli": "0.6.2",
-    "@cloudhal/cloudflare": "0.6.2",
-    "@cloudhal/core-contracts": "0.6.2",
-    "@cloudhal/core-ts": "0.6.2",
+    "@astrojs/cloudflare": "14.4.6",
+    "@cloudhal/astro-renderer": "0.10.0",
+    "@cloudhal/cli": "0.10.0",
+    "@cloudhal/cloudflare": "0.10.0",
+    "@cloudhal/core-contracts": "0.10.0",
+    "@cloudhal/core-ts": "0.10.0",
     "@tailwindcss/vite": "4.3.3",
-    "astro": "7.3.6",
+    "astro": "7.4.7",
     "tailwindcss": "4.3.3"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
     "@cloudflare/workers-types": "5.20261007.1",
     "typescript": "7.0.2",
-    "wrangler": "4.148.0"
+    "wrangler": "4.158.0"
   }
 }
